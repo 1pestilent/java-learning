@@ -1,0 +1,13 @@
+services:
+  postgres:
+    container_name: homework2
+    image: postgres:17
+    restart: always
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: homework2
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
