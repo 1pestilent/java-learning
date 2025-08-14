@@ -49,7 +49,7 @@ public class UserDaoImpl implements UserDao {
             Query<User> query = session.createQuery("from User", User.class);
             List<User> users = query.list();
 
-            System.out.println("\n=== Список пользователей ===");
+            System.out.println("\nСписок пользователей:");
             users.forEach(user -> System.out.println(
                     String.format("ID: %d | Имя: %-15s | Email: %-20s | Возраст: %d",
                             user.getId(),
@@ -57,7 +57,7 @@ public class UserDaoImpl implements UserDao {
                             user.getEmail(),
                             user.getAge())
             ));
-                System.out.println(String.format("=== Всего пользователей: %d ===\n", users.size()));
+                System.out.println("Всего пользователей:" + users.size());
 
             return users;
         }

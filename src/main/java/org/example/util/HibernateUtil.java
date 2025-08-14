@@ -11,12 +11,10 @@ public class HibernateUtil {
 
     private static SessionFactory buildSessionFactory() {
         try {
-            // Create the ServiceRegistry from hibernate.cfg.xml
             StandardServiceRegistry standardRegistry = new StandardServiceRegistryBuilder()
                     .configure("hibernate.cfg.xml")
                     .build();
 
-            // Create a metadata sources using the specified service registry.
             Metadata metadata = new MetadataSources(standardRegistry)
                     .getMetadataBuilder()
                     .build();
@@ -33,7 +31,6 @@ public class HibernateUtil {
     }
 
     public static void shutdown() {
-        // Close caches and connection pools
         getSessionFactory().close();
     }
 }
