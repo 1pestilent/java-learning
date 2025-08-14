@@ -9,13 +9,14 @@ import java.util.List;
 
 public class UserDaoImpl implements UserDao {
     @Override
-    public void save(User user) {
+    public User save(User user) {
         Transaction transaction = null;
         try (Session session = HibernateUtil.getSessionFactory().openSession()) {
             transaction = session.beginTransaction();
             session.save(user);
             transaction.commit();
             System.out.println(String.format("Пользователь успешно создан. ID: %d, Имя: %s", user.getId(), user.getName()));
+
         } catch (Exception e) {
             if (transaction != null) {
                 transaction.rollback();
@@ -23,6 +24,7 @@ public class UserDaoImpl implements UserDao {
             System.err.println("Ошибка при создании пользователя: " + e.getMessage());
             throw e;
         }
+        return user;
     }
 
     @Override
@@ -49,7 +51,7 @@ public class UserDaoImpl implements UserDao {
             Query<User> query = session.createQuery("from User", User.class);
             List<User> users = query.list();
 
-            System.out.println("\n=== Список пользователей ===");
+            System.out.println("\nСписок пользователей:");
             users.forEach(user -> System.out.println(
                     String.format("ID: %d | Имя: %-15s | Email: %-20s | Возраст: %d",
                             user.getId(),
@@ -57,7 +59,7 @@ public class UserDaoImpl implements UserDao {
                             user.getEmail(),
                             user.getAge())
             ));
-                System.out.println(String.format("=== Всего пользователей: %d ===\n", users.size()));
+                System.out.println("Всего пользователей:" + users.size());
 
             return users;
         }
