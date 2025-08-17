@@ -35,7 +35,12 @@ public class UserDaoImpl implements UserDao {
                 System.out.println(String.format("Пользователь с ID %d не найден", id));
                 return null;
             }
-            System.out.println(String.format("\n--- Данные пользователя ---\nID: %d\nИмя: %s\nEmail: %s\nВозраст: %d\nДата регистрации: %s\n",
+            System.out.println(String.format("\nДанные пользователя:" +
+                            "\nID: %d" +
+                            "\nИмя: %s" +
+                            "\nEmail: %s" +
+                            "\nВозраст: %d" +
+                            "\nДата регистрации: %s\n",
                     user.getId(),
                     user.getName(),
                     user.getEmail(),
