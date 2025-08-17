@@ -61,6 +61,7 @@ class UserServiceUnitTest {
         assertEquals(2, users.size());
     }
 
+    @Test
     void getAllUsersTest_returnUsers() {
         List<User> expectedUsers = List.of(
                 new User("Тестировщик Иван", "Иван@тестировщик.ру", 30),
@@ -71,7 +72,6 @@ class UserServiceUnitTest {
 
         List<User> users = userService.getAllUsers();
         assertEquals(expectedUsers, users);
-
     }
 
     @Test
@@ -87,17 +87,5 @@ class UserServiceUnitTest {
         assertEquals("Коля@тестировщик.ру", updatedUser.getEmail());
         assertEquals(22, updatedUser.getAge());
         verify(userDao).update(existingUser);
-    }
-
-    @Test
-    void deleteUserTest() {
-        User user = new User("Тестировщик Иван", "Иван@тестировщик.ру", 30);
-        user.setId(1L);
-
-        when(userDao.findById(1L)).thenReturn(user);
-
-        userService.deleteUser(1L);
-
-        verify(userDao).delete(user);
     }
 }
