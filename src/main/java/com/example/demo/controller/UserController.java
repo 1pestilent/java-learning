@@ -2,23 +2,18 @@ package com.example.demo.controller;
 import com.example.demo.dto.UserCreateDto;
 import com.example.demo.dto.UserDto;
 import com.example.demo.dto.UserUpdateDto;
-import com.example.demo.model.User;
-import com.example.demo.repository.UserRepository;
-import com.example.demo.service.UserService;
-
+import com.example.demo.service.UserServiceImpl;
 import lombok.*;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 
 @RestController
-@RequestMapping("/api/users")
 @RequiredArgsConstructor
+@RequestMapping("/api/users")
 public class UserController {
-    private final UserService userService;
-    private final UserRepository userRepository;
+    private final UserServiceImpl userService ;
 
     @PostMapping("/")
     public UserDto createUser(
@@ -48,10 +43,10 @@ public class UserController {
     }
 
     @DeleteMapping("/")
-    public boolean deleteUser(
+    public void deleteUser(
             Long id
     ) {
-        return userService.delete(id);
+        userService.deleteUser(id);
     }
 }
 

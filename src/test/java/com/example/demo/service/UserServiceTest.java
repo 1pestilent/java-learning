@@ -26,7 +26,7 @@ public class UserServiceTest {
     private UserRepository userRepository;
 
     @InjectMocks
-    private UserService userService;
+    private UserServiceImpl userService;
 
     @Test
     void userCreateTest_returnUser() {
@@ -120,7 +120,7 @@ public class UserServiceTest {
         when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
         doNothing().when(userRepository).delete(user);
 
-        userService.delete(user.getId());
+        userService.deleteUser(user.getId());
 
         verify(userRepository, times(1)).findById(user.getId());
         verify(userRepository, times(1)).delete(user);
@@ -131,7 +131,7 @@ public class UserServiceTest {
         Long id = 999L;
 
         assertThrows(UserNotFoundException.class, () -> {
-            userService.delete(id);
+            userService.deleteUser(id);
         });
 
         verify(userRepository, times(1)).findById(id);
