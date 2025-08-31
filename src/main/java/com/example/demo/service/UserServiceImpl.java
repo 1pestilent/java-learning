@@ -6,6 +6,7 @@ import com.example.demo.dto.UserUpdateDto;
 import com.example.demo.exception.UserAlreadyExistsException;
 import com.example.demo.exception.UserNotFoundException;
 import com.example.demo.model.User;
+import com.example.demo.producer.UserEventProducer;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import java.util.List;
 public class UserServiceImpl implements  UserService{
 
     private final UserRepository userRepository;
+    private final UserEventProducer userEventProducer;
 
     @Override
     public UserDto createUser(UserCreateDto userCreate) {
@@ -42,7 +44,9 @@ public class UserServiceImpl implements  UserService{
     created_user.setEmail(userCreate.getEmail());
     created_user.setAge(userCreate.getAge());
 
-    return UserDto.fromEntity(userRepository.save(created_user));
+    UserDto new_user = UserDto.fromEntity(userRepository.save(created_user));
+    userEventProducer.sendUserCreated(new_user);
+    return new_user;
 }
 
     @Override
@@ -80,5 +84,6 @@ public class UserServiceImpl implements  UserService{
     public void deleteUser(Long id) {
         User user = userRepository.findById(id).orElseThrow(() -> new UserNotFoundException(id));
         userRepository.delete(user);
+        userEventProducer.sendUserDeleted(UserDto.fromEntity(user));
     }
 }
