@@ -3,10 +3,10 @@ package com.example.demo.repository;
 
 import com.example.demo.model.User;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -23,10 +23,14 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @SpringBootTest
 public class UserRepositoryTest {
     @Container
-    private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17")
-            .withDatabaseName("testdb")
-            .withUsername("test")
-            .withPassword("test");
+    private static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17");
+
+    @BeforeAll
+    static void setup() {
+        System.setProperty("test_db", postgres.getJdbcUrl());
+        System.setProperty("test", postgres.getUsername());
+        System.setProperty("test", postgres.getPassword());
+    }
 
     @Autowired
     private UserRepository userRepository;

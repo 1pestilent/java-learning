@@ -6,18 +6,20 @@ import com.example.demo.exception.UserAlreadyExistsException;
 import com.example.demo.exception.UserNotFoundException;
 import com.example.demo.model.User;
 import com.example.demo.repository.UserRepository;
-import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
-
+import com.github.javafaker.Faker;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class UserServiceTest {
@@ -26,54 +28,106 @@ public class UserServiceTest {
     private UserRepository userRepository;
 
     @InjectMocks
-    private UserService userService;
+    private UserServiceImpl userService;
+
+    private Faker faker;
+    private User testUser;
+    private UserCreateDto testUserCreateDto;
+
+    @BeforeEach
+    void setUp() {
+        faker = new Faker();
+        testUser = createTestUser(1L);
+        testUserCreateDto = createTestUserCreateDto();
+    }
+
+    private User createTestUser(Long id) {
+        return new User(
+                id,
+                faker.name().firstName(),
+                faker.internet().emailAddress(),
+                faker.number().numberBetween(18, 65)
+        );
+    }
+
+    private UserCreateDto createTestUserCreateDto() {
+        return new UserCreateDto(
+                faker.name().firstName(),
+                faker.internet().emailAddress(),
+                faker.number().numberBetween(18, 65)
+        );
+    }
 
     @Test
     void userCreateTest_returnUser() {
-        UserCreateDto createDto = new UserCreateDto("Ivan", "Ivan@Ivan.ru", 11);
+        UserCreateDto consistentCreateDto = createTestUserCreateDto();
+        User expectedUser = new User(
+                1L,
+                consistentCreateDto.getUsername(),
+                consistentCreateDto.getEmail(),
+                consistentCreateDto.getAge()
+        );
 
-        User new_user = new User(1L, "Ivan","Ivan@Ivan.ru", 11);
-        when(userRepository.save(any(User.class))).thenReturn(new_user);
+        when(userRepository.existsByEmail(consistentCreateDto.getEmail())).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenReturn(expectedUser);
 
-        UserDto result = userService.createUser(createDto);
+        UserDto result = userService.createUser(consistentCreateDto);
 
-        assertNotNull(result.getId());
-        assertEquals(createDto.getUsername(), result.getUsername());
-        assertEquals(createDto.getEmail(), result.getEmail());
-        assertEquals(createDto.getAge(), result.getAge());
+        assertAll(
+                () -> assertNotNull(result),
+                () -> assertNotNull(result.getId()),
+                () -> assertEquals(consistentCreateDto.getUsername(), result.getUsername()),
+                () -> assertEquals(consistentCreateDto.getEmail(), result.getEmail()),
+                () -> assertEquals(consistentCreateDto.getAge(), result.getAge())
+        );
 
+        verify(userRepository, times(1)).existsByEmail(consistentCreateDto.getEmail());
         verify(userRepository, times(1)).save(any(User.class));
     }
 
     @Test
     void userCreateTest_throwUserAlreadyExistsException() {
-        UserCreateDto createDto = new UserCreateDto("Ivan", "Ivan@Ivan.ru", 11);
+        when(userRepository.existsByEmail(testUserCreateDto.getEmail())).thenReturn(true);
 
-        when(userRepository.existsByEmail("Ivan@Ivan.ru")).thenReturn(true);
+        assertAll(
+                () -> assertThrows(UserAlreadyExistsException.class, () -> {
+                    userService.createUser(testUserCreateDto);
+                })
+        );
 
-        assertThrows(UserAlreadyExistsException.class, () -> {
-            userService.createUser(createDto);
-        });
+        verify(userRepository, times(1)).existsByEmail(testUserCreateDto.getEmail());
         verify(userRepository, never()).save(any(User.class));
-        verify(userRepository, times(1)).existsByEmail("Ivan@Ivan.ru");
     }
 
     @Test
     void getAllUsersTest_returnUsers() {
         List<User> expectedUsers = List.of(
-                new User(1L, "Ivan", "Ivan@Ivan.ru", 11),
-                new User(2L, "Maxim", "Maxim@Ivan.ru", 33)
+                createTestUser(1L),
+                createTestUser(2L),
+                createTestUser(3L)
         );
 
         when(userRepository.findAll()).thenReturn(expectedUsers);
 
-        List<UserDto> users = userService.getAllUsers();
-        List<UserDto> expectedUsersDto = new ArrayList<>();
-        for (User expectedUser : expectedUsers) {
-            expectedUsersDto.add(UserDto.fromEntity(expectedUser));
-        }
+        List<UserDto> result = userService.getAllUsers();
 
-        assertEquals(expectedUsersDto, users);
+        assertAll(
+                () -> assertNotNull(result),
+                () -> assertEquals(expectedUsers.size(), result.size()),
+                () -> {
+                    for (int i = 0; i < expectedUsers.size(); i++) {
+                        User expected = expectedUsers.get(i);
+                        UserDto actual = result.get(i);
+                        assertAll(
+                                () -> assertEquals(expected.getId(), actual.getId()),
+                                () -> assertEquals(expected.getUsername(), actual.getUsername()),
+                                () -> assertEquals(expected.getEmail(), actual.getEmail()),
+                                () -> assertEquals(expected.getAge(), actual.getAge())
+                        );
+                    }
+                }
+        );
+
         verify(userRepository, times(1)).findAll();
     }
 
@@ -83,58 +137,72 @@ public class UserServiceTest {
 
         List<UserDto> result = userService.getAllUsers();
 
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
+        assertAll(
+                () -> assertNotNull(result),
+                () -> assertTrue(result.isEmpty()),
+                () -> assertEquals(0, result.size())
+        );
+
         verify(userRepository, times(1)).findAll();
     }
 
     @Test
     void getUserByIdTest() {
-        User expectedUser = new User(1L, "Ivan", "Ivan@Ivan.ru", 11);
-
-        when(userRepository.findById(1L)).thenReturn(Optional.of(expectedUser));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
 
         UserDto result = userService.getUserById(1L);
 
-        assertNotNull(result);
-        assertEquals(expectedUser.getId(), result.getId());
-        assertEquals(expectedUser.getUsername(), result.getUsername());
-        assertEquals(expectedUser.getEmail(), result.getEmail());
-        assertEquals(expectedUser.getAge(), result.getAge());
+        assertAll(
+                () -> assertNotNull(result),
+                () -> assertEquals(testUser.getId(), result.getId()),
+                () -> assertEquals(testUser.getUsername(), result.getUsername()),
+                () -> assertEquals(testUser.getEmail(), result.getEmail()),
+                () -> assertEquals(testUser.getAge(), result.getAge())
+        );
 
         verify(userRepository, times(1)).findById(1L);
     }
 
     @Test
     void getUserByIdTest_throwUserNotFoundException() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
-        assertThrows(UserNotFoundException.class, () -> {
-            userService.getUserById(1L);
-        });
-        verify(userRepository, times(1)).findById(1L);
+        Long nonExistentId = 999L;
+        when(userRepository.findById(nonExistentId)).thenReturn(Optional.empty());
+
+        assertAll(
+                () -> assertThrows(UserNotFoundException.class, () -> {
+                    userService.getUserById(nonExistentId);
+                })
+        );
+
+        verify(userRepository, times(1)).findById(nonExistentId);
     }
 
     @Test
     void deleteUserTest() {
-        User user = new User(1L, "Ivan", "Ivan@Ivan.ru", 11);
-        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
-        doNothing().when(userRepository).delete(user);
+        when(userRepository.findById(testUser.getId())).thenReturn(Optional.of(testUser));
+        doNothing().when(userRepository).delete(testUser);
 
-        userService.delete(user.getId());
+        userService.deleteUser(testUser.getId());
 
-        verify(userRepository, times(1)).findById(user.getId());
-        verify(userRepository, times(1)).delete(user);
+
+        assertAll(
+                () -> verify(userRepository, times(1)).findById(testUser.getId()),
+                () -> verify(userRepository, times(1)).delete(testUser)
+        );
     }
 
     @Test
     void deleteUserTest_throwUserNotFoundException() {
-        Long id = 999L;
+        Long nonExistentId = 999L;
+        when(userRepository.findById(nonExistentId)).thenReturn(Optional.empty());
 
-        assertThrows(UserNotFoundException.class, () -> {
-            userService.delete(id);
-        });
-
-        verify(userRepository, times(1)).findById(id);
-        verify(userRepository, never()).delete(any());
+        assertAll(
+                () -> assertThrows(UserNotFoundException.class, () -> {
+                    userService.deleteUser(nonExistentId);
+                }),
+                () -> verify(userRepository, times(1)).findById(nonExistentId),
+                () -> verify(userRepository, never()).delete(any(User.class))
+        );
     }
+
 }
