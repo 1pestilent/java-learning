@@ -11,6 +11,7 @@ services:
       - ./postgres_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+
   kafka:
     image: 'bitnami/kafka:latest'
     ports:
@@ -24,25 +25,26 @@ services:
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
       - KAFKA_CFG_NUM_PARTITIONS=3
-  zookeeper-server:
-    image: 'bitnami/zookeeper:latest'
+
+  service-discovery:
+    image: servicediscovery
+    container_name: service-discovery
     ports:
-      - '2181:2181'
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
-  app:
+      - '8761:8761'
+
+  user-service:
     build: .
-    ports:
-      - "8080:8080"
-    environment:
-      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-    depends_on:
-      - postgres
-      - kafka
-  notify-service:
-    image: notify-service
+    container_name: user-service
     ports:
       - "8081:8081"
     depends_on:
       - postgres
       - kafka
+
+  notify-service:
+    image: notifyservice
+    ports:
+      - "8082:8082"
+    depends_on:
+      - kafka
+      - user-service
