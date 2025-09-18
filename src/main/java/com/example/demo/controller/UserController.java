@@ -27,7 +27,6 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/users")
 @Tag(name = "User Management", description = "APIs for managing users")
 public class UserController{
 
